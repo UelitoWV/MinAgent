@@ -1,4 +1,5 @@
-# MinAgent - Campo Minado Autônomo com Árvore de Comportamento e LLM
+
+# MinAgent - Campo Minado Autônomo com Árvore de Comportamento e LLM - Wellington Viana
 
 Este projeto implementa um agente autônomo capaz de jogar Campo Minado de forma inteligente. A tomada de decisão combina técnicas clássicas estruturadas através de uma Árvore de Comportamento (Behavior Tree) com a capacidade cognitiva de modelos de linguagem de grande porte (LLMs) como fallback para situações de alta incerteza.
 
@@ -37,17 +38,19 @@ O papel detalhado de cada arquivo de código:
 
 ## Arquitetura de Decisão (Árvore de Comportamento)
 
+<img width="8192" height="1527" alt="BehaviorTree MinAgent" src="https://github.com/user-attachments/assets/405c1210-dac0-41e2-95dd-24ef1040f615" />
+
 O comportamento do agente segue uma prioridade estrita de regras executada recursivamente a cada turno (tick da árvore). A árvore está organizada sob um nó Selector principal que tenta executar as seguintes sequências por ordem de prioridade:
 
-1.  **S1: Célula Segura Óbvia (Determinístico)**
+1.  **S1: Célula Segura Óbvia**
     *   **Regra**: Se um número revelado N possui exatamente N bandeiras marcadas ao redor, então todos os outros vizinhos ocultos desse número são seguros e podem ser revelados.
-2.  **S2: Mina Óbvia (Determinístico)**
+2.  **S2: Mina Óbvia**
     *   **Regra**: Se a quantidade de vizinhos ocultos ao redor de uma célula revelada N é exatamente igual à quantidade de minas restantes que faltam ser identificadas para aquele número, então todas essas células ocultas vizinhas são marcadas obrigatoriamente com bandeiras.
-3.  **S3: Subconjuntos / Análise Setorial (Lógica Avançada)**
+3.  **S3: Subconjuntos**
     *   **Regra**: Compara pares de células adjacentes na fronteira ativa. Se as células ocultas sob a influência da célula A forem um subconjunto estrito das células ocultas sob a influência da célula B:
         *   Caso a diferença de minas necessárias entre as duas células seja zero, as células extras exclusivas de B são seguras.
         *   Caso a diferença de minas necessárias seja igual ao número de células extras de B, essas células extras contêm minas obrigatoriamente.
-4.  **S4: Agente LLM (Incerteza / Raciocínio Probabilístico)**
+4.  **S4: Agente LLM**
     *   **Regra**: Ativada somente quando nenhuma célula pode ser deduzida com 100% de certeza matemática pelas regras locais anteriores. A LLM recebe os dados das células da fronteira e calcula o risco relativo de cada candidata, executando a ação com o menor índice de risco estimado.
 
 Se houver uma falha crítica na conexão ou na estruturação da resposta da LLM, o agente possui um mecanismo automático de fallback que executa uma jogada segura aleatória dentro da fronteira atual de modo a evitar o travamento da partida.
@@ -115,7 +118,7 @@ Para que as chamadas ao modelo de inferência funcionem de forma correta, o toke
 2.  Abra o arquivo `.env` em um editor de texto e insira o seu token pessoal fine-grained com escopo de Inference na variável `HF_TOKEN`:
     ```env
     HF_TOKEN=seu_token_real_da_huggingface_aqui_sem_aspas
-    LLM_MODEL=Qwen/Qwen2.5-7B-Instruct
+    LLM_MODEL=meta-llama/Meta-Llama-3-70B-Instruct:novita
     LLM_MAX_TOKENS=512
     ```
     *Nota: Você pode modificar a variável `LLM_MODEL` para apontar para outro modelo de instrução compatível com a API se assim desejar.*
