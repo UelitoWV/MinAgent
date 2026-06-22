@@ -6,7 +6,7 @@ load_dotenv()
 # CONFIGURAÇÕES DE AMBIENTE E JOGO
 # LLM
 HF_TOKEN       = os.getenv("HF_TOKEN")
-LLM_MODEL      = os.getenv("LLM_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+LLM_MODEL      = os.getenv("LLM_MODEL", "meta-llama/Meta-Llama-3-70B-Instruct:novita")
 LLM_MAX_TOKENS = 512
 
 # Tabuleiro
