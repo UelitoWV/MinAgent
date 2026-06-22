@@ -118,7 +118,7 @@ Para que as chamadas ao modelo de inferência funcionem de forma correta, o toke
 2.  Abra o arquivo `.env` em um editor de texto e insira o seu token pessoal fine-grained com escopo de Inference na variável `HF_TOKEN`:
     ```env
     HF_TOKEN=seu_token_real_da_huggingface_aqui_sem_aspas
-    LLM_MODEL=Qwen/Qwen2.5-7B-Instruct
+    LLM_MODEL=meta-llama/Meta-Llama-3-70B-Instruct:novita
     LLM_MAX_TOKENS=512
     ```
     *Nota: Você pode modificar a variável `LLM_MODEL` para apontar para outro modelo de instrução compatível com a API se assim desejar.*
