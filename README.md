@@ -1,4 +1,4 @@
-# MinAgent - Campo Minado Autônomo com Árvore de Comportamento e LLM
+# MinAgent - Campo Minado Autônomo com Árvore de Comportamento e LLM - Wellington Viana
 
 Este projeto implementa um agente autônomo capaz de jogar Campo Minado de forma inteligente. A tomada de decisão combina técnicas clássicas estruturadas através de uma Árvore de Comportamento (Behavior Tree) com a capacidade cognitiva de modelos de linguagem de grande porte (LLMs) como fallback para situações de alta incerteza.
 
