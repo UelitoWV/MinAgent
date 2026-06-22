@@ -39,15 +39,15 @@ O papel detalhado de cada arquivo de código:
 
 O comportamento do agente segue uma prioridade estrita de regras executada recursivamente a cada turno (tick da árvore). A árvore está organizada sob um nó Selector principal que tenta executar as seguintes sequências por ordem de prioridade:
 
-1.  **S1: Célula Segura Óbvia (Determinístico)**
+1.  **S1: Célula Segura Óbvia**
     *   **Regra**: Se um número revelado N possui exatamente N bandeiras marcadas ao redor, então todos os outros vizinhos ocultos desse número são seguros e podem ser revelados.
-2.  **S2: Mina Óbvia (Determinístico)**
+2.  **S2: Mina Óbvia**
     *   **Regra**: Se a quantidade de vizinhos ocultos ao redor de uma célula revelada N é exatamente igual à quantidade de minas restantes que faltam ser identificadas para aquele número, então todas essas células ocultas vizinhas são marcadas obrigatoriamente com bandeiras.
-3.  **S3: Subconjuntos / Análise Setorial (Lógica Avançada)**
+3.  **S3: Subconjuntos**
     *   **Regra**: Compara pares de células adjacentes na fronteira ativa. Se as células ocultas sob a influência da célula A forem um subconjunto estrito das células ocultas sob a influência da célula B:
         *   Caso a diferença de minas necessárias entre as duas células seja zero, as células extras exclusivas de B são seguras.
         *   Caso a diferença de minas necessárias seja igual ao número de células extras de B, essas células extras contêm minas obrigatoriamente.
-4.  **S4: Agente LLM (Incerteza / Raciocínio Probabilístico)**
+4.  **S4: Agente LLM**
     *   **Regra**: Ativada somente quando nenhuma célula pode ser deduzida com 100% de certeza matemática pelas regras locais anteriores. A LLM recebe os dados das células da fronteira e calcula o risco relativo de cada candidata, executando a ação com o menor índice de risco estimado.
 
 Se houver uma falha crítica na conexão ou na estruturação da resposta da LLM, o agente possui um mecanismo automático de fallback que executa uma jogada segura aleatória dentro da fronteira atual de modo a evitar o travamento da partida.
