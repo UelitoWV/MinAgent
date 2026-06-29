@@ -96,25 +96,28 @@ final_answer({{
 
         try:
             # CodeAgent entregando o modelo que definimos acima e rodando o prompt acima
-            agent1 = CodeAgent(tools=[], model=model, add_base_tools=False)
+            agent1 = CodeAgent(tools=[], model=model, add_base_tools=False, max_steps=2)
             raw = agent1.run(prompt, additional_args={"dados_fronteira": frontier_data})
             print(raw)
 
             # Puxa tudo pra string
             self.last_response = str(raw)
 
-            try:
-                data = json.loads(raw.replace("'", '"'))
-            except json.JSONDecodeError:
-                match = re.search(r"\{.*\}", 
-                                  raw, 
-                                  re.DOTALL)
-                if not match:
-                    self._log_error("JSON não encontrado na string", raw)
+            if isinstance(raw, dict):
+                data = raw
+            elif isinstance(raw, str):
+                try:
+                    data = json.loads(raw.replace("'", '"'))
+                except json.JSONDecodeError:
+                    match = re.search(r"\{.*\}", 
+                                    raw, 
+                                    re.DOTALL)
+                    if not match:
+                        self._log_error("JSON não encontrado na string", raw)
+                        
+                        return self._fallback(game, "JSON não encontrado na string")
                     
-                    return self._fallback(game, "JSON não encontrado na string")
-                
-                data = json.loads(match.group())
+                    data = json.loads(match.group())
 
             # Aqui pegamos o que a LLM gerou e colocamos no nosso jogo como uma ação
             row = int(data["row"])

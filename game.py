@@ -142,9 +142,11 @@ class MinesweeperGame:
     # Checa se acertou tudo
     def _check_win(self):
         total = self.rows * self.cols
-        if self.cells_revealed == total - self.flags_placed:
+        if self.cells_revealed == total - self.num_mines:
             self.won = True
             self.game_over = True
+            
+            self.flags_placed = self.num_mines
 
     # Highlights 
     def clear_highlights(self):
