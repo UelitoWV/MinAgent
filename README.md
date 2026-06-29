@@ -117,9 +117,9 @@ Para que as chamadas ao modelo de inferência funcionem de forma correta, o toke
 
 2.  Abra o arquivo `.env` em um editor de texto e insira o seu token pessoal fine-grained com escopo de Inference na variável `HF_TOKEN`:
     ```env
-    HF_TOKEN=seu_token_real_da_huggingface_aqui_sem_aspas
-    LLM_MODEL=meta-llama/Meta-Llama-3-70B-Instruct:novita
-    LLM_MAX_TOKENS=512
+    HF_TOKEN=coloque_seu_token_real_aqui_sem_aspas
+    LLM_MODEL=huggingface/meta-llama/Llama-3.3-70B-Instruct:novita
+    LLM_MAX_TOKENS=1024
     ```
     *Nota: Você pode modificar a variável `LLM_MODEL` para apontar para outro modelo de instrução compatível com a API se assim desejar.*
 
@@ -143,5 +143,4 @@ Uma janela com título "Campo Minado — BT + LLM Agent" será exibida contendo 
 Este projeto contou com assistência de Inteligência Artificial (especificamente os modelos Claude Sonnet 4.6) para a codificação de componentes específicos:
 
 *   **Interface Gráfica e Visualização (renderer.py)**: O módulo visual completo integrando Pygame e Matplotlib para renderização do tabuleiro e atualização em tempo real do log e das estatísticas foi implementado a partir de assistência de IA.
-*   **Lógica de Tradução Textual (game.py)**: A função `to_ascii` responsável por converter a matriz em grade textual estruturada foi projetada com IA para garantir a precisão dos dados enviados no contexto do modelo de linguagem.
 *   **Estruturação de Prompts e Tratamento de Respostas**: O refinamento e correção de erros na desserialização de dados JSON em `llm_agent.py` foram aprimorados via ferramentas de inteligência artificial de modo a assegurar que as jogadas do agente de LLM fossem devidamente integradas na Árvore de Comportamento.
