@@ -64,13 +64,13 @@ def do_step() -> bool:
             "bt_safe": "BT-Segura", "llm": "LLM", "llm_fallback": "LLM-Fallback"
         }.get(action["source"], action["source"])
         status = "V" if success else " ** MINA!"
-        print(f"[{src_label:12}] REVEAL ({r:2},{c:2}) → {status}  | {action['reasoning'][:60]}")
+        print(f"[{src_label:12}] REVEAL ({r:2},{c:2}) → {status}  | {action['reasoning'][:512]}")
     elif action["type"] == "flag":
         game.flag(r, c)
         src_label = {
             "bt_mine": "BT-Mina", "bt_subset_safe": "BT-Subset", "llm": "LLM"
         }.get(action["source"], action["source"])
-        print(f"[{src_label:12}] FLAG   ({r:2},{c:2})           | {action['reasoning'][:60]}")
+        print(f"[{src_label:12}] FLAG   ({r:2},{c:2})           | {action['reasoning'][:512]}")
 
     # Redesenha após ação
     node_status = collect_node_status(bt_tree)

@@ -1,17 +1,21 @@
 import json
 import random
-import re
-
-from huggingface_hub import InferenceClient
+import re, ast
+from smolagents import CodeAgent, LiteLLMModel
 
 from config import HF_TOKEN, LLM_MODEL, LLM_MAX_TOKENS
+from game import HIDDEN, FLAGGED, REVEALED
 
-client = InferenceClient(
+
+model = LiteLLMModel(
+    model_id=LLM_MODEL,
     api_key=HF_TOKEN,
+    max_tokens=LLM_MAX_TOKENS,
 )
 
 '''
-Classe que possui a função de chamar a LLM (via Hugging Face COM Inference Providers**) para nos dar o resultado da próxima ação do agente
+Agente LLM com paradigma CodeAct (smolagents):
+Em vez de responder em JSON, o modelo gera e executa código Python para calcular probabilidades de mina e decidir a jogada mais segura. (Sugestão do professor)
 '''
 class LLMAgent:
     def __init__(self):
@@ -24,14 +28,33 @@ class LLMAgent:
     def decide(self, game) -> dict | None:
         self.call_count += 1
 
-        # Funções auxiliares do arquivo 'game.py' para facilitar o entendimento da LLM
-        state = game.get_state()
-        ascii_grid = game.to_ascii() # FEITO POR IA - Claude
+        # Função auxiliares do arquivo 'game.py' para facilitar o entendimento da LLM
         frontier = game.frontier_cells()
+        
+        frontier_data = {}
+
+        for r, c in frontier[:12]:
+            vizinhos_info = []
+            for nr, nc in self._number_neighbors(game, r, c):
+                num = game.get_number(nr, nc)
+                flags = game.count_flags_around(nr, nc)
+                hid = game.count_hidden_around(nr, nc)
+                
+                vizinhos_info.append({
+                    "minas_restantes": num - flags,
+                    "ocultas_restantes": hid
+                })
+            
+            if vizinhos_info:
+                frontier_data[f"{r},{c}"] = vizinhos_info
+
+        # Se não há dados na fronteira, aciona o fallback imediatamente
+        if not frontier_data:
+            return self._fallback(game, "Sem dados estruturados na fronteira para analisar.")
 
         candidates = []
 
-        for r, c in frontier[:30]:
+        for r, c in frontier[:12]:
             adj_nums = []
 
             for nr, nc in self._number_neighbors(game, r, c):
@@ -49,109 +72,51 @@ class LLMAgent:
                 f"({r},{c}):\n" + "\n".join(adj_nums)
             )
 
-        cand_text = (
-            "\n".join(candidates)
-            if candidates
-            else "Nenhuma célula na fronteira."
-        )
+        prompt = f"""Você é um especialista em análise de Campo Minado.
+A variável 'dados_fronteira' JÁ ESTÁ CARREGADA na sua memória. ELA É UM DICIONÁRIO.
+NÃO TENTE DECLARAR OU REESCREVER a variável 'dados_fronteira' no seu código. Use-a diretamente.
 
-        if not frontier and state["hidden"]:
-            non_frontier = state["hidden"][:10]
+Regras do seu script:
+1. Itere sobre dados_fronteira.items().
+2. Para cada restrição de uma coordenada, calcule o risco: (minas_restantes / ocultas_restantes).
+3. O risco da coordenada é o MAIOR risco entre os vizinhos.
+4. Encontre a coordenada com o MENOR risco.
+5. Use a ferramenta final_answer() passando EXATAMENTE um dicionário com a sua resposta.
 
-            cand_text = (
-                "Sem fronteira. Candidatas aleatórias:\n"
-                + ", ".join(str(x) for x in non_frontier)
-            )
-
-        prompt = f"""
-Você é um especialista em Campo Minado.
-
-GRID {game.rows}x{game.cols}
-
-Minas restantes: {state['mines_remaining']}
-Células ocultas: {state['cells_hidden']}
-Jogadas: {state['moves']}
-
-TABULEIRO:
-
-{ascii_grid}
-
-Legenda:
-. = oculta
-F = bandeira
-□ = vazia revelada
-1-8 = número
-X = explodida
-
-CANDIDATAS:
-
-{cand_text}
-
-SUA TAREFA E REGRAS ESTRITAS:
-1. ALVO RESTRITO: A sua coordenada final (row, col) DEVE OBRIGATORIAMENTE ser extraída da lista de CANDIDATAS. Nunca escolha a coordenada de um número.
-2. CÁLCULO DE RISCO: Calcule o risco cruzando os vizinhos. Risco = (Minas pendentes do vizinho) / (Células ocultas ao redor do vizinho).
-3. AÇÃO 'flag': USO RESTRITO. Só use se o cálculo provar 100% de risco matemático (Minas pendentes == Células ocultas restantes).
-4. AÇÃO 'reveal': Escolha a CANDIDATA com a MENOR porcentagem de risco.
-5. DESEMPATE: Se várias candidatas tiverem o mesmo risco (ex: 50%), escolha a que toca no menor número de outras células ocultas.
-
-IMPORTANTE:
-- Responda SOMENTE JSON válido.
-- Não utilize markdown.
-- Não utilize blocos ```json.
-- Não escreva texto antes ou depois do JSON.
-
-Formato obrigatório:
-
-{{
-  "reasoning": "Prove a matemática. Ex: 'O 3 em (2,2) já tem 1 flag. Faltam 2 minas. Ele toca em exatamente 2 ocultas. Logo, (2,3) é flag obrigatório.' Se não houver prova assim, use reveal.",
-  "action": "reveal | flag",
-  "row": 0,
-  "col": 0
-}}
-
-
+EXEMPLO OBRIGATÓRIO DE SAÍDA:
+final_answer({{
+    "row": 4,
+    "col": 5,
+    "action": "reveal",
+    "reasoning": "Risco calculado: 25%"
+}})
 """
 
         self.last_prompt = prompt
 
         try:
-            response = client.chat.completions.create(
-                model=LLM_MODEL,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ],
-                temperature=0.1, # Dar menos aleatoriedade pra LLM
-                max_tokens=LLM_MAX_TOKENS,
-            )
-            raw = response.choices[0].message.content.strip()
+            # CodeAgent entregando o modelo que definimos acima e rodando o prompt acima
+            agent1 = CodeAgent(tools=[], model=model, add_base_tools=False)
+            raw = agent1.run(prompt, additional_args={"dados_fronteira": frontier_data})
+            print(raw)
 
-            self.last_response = raw
+            # Puxa tudo pra string
+            self.last_response = str(raw)
 
-            match = re.search(
-                r"\{.*\}",
-                raw,
-                re.DOTALL,
-            )
+            try:
+                data = json.loads(raw.replace("'", '"'))
+            except json.JSONDecodeError:
+                match = re.search(r"\{.*\}", 
+                                  raw, 
+                                  re.DOTALL)
+                if not match:
+                    self._log_error("JSON não encontrado na string", raw)
+                    
+                    return self._fallback(game, "JSON não encontrado na string")
+                
+                data = json.loads(match.group())
 
-            # Alguns tratamentos de erros
-            if not match:
-                self._log_error(
-                    "JSON não encontrado",
-                    raw,
-                )
-                print("\n===== RAW =====")
-                print(raw)
-                print("===============")  
-                return self._fallback(
-                    game,
-                    "JSON não encontrado",
-                )
-
-            data = json.loads(match.group())
-
+            # Aqui pegamos o que a LLM gerou e colocamos no nosso jogo como uma ação
             row = int(data["row"])
             col = int(data["col"])
 
@@ -164,10 +129,7 @@ Formato obrigatório:
             if action not in ("reveal", "flag"):
                 action = "reveal"
 
-            reasoning = data.get(
-                "reasoning",
-                "",
-            )
+            reasoning = data.get("reasoning", "")
 
             if not (
                 0 <= row < game.rows
@@ -182,26 +144,19 @@ Formato obrigatório:
                     "posição inválida",
                 )
 
-            from game import HIDDEN, FLAGGED
 
-            state_cell = game.get_cell_state(
-                row,
-                col,
-            )
+            state_cell = game.get_cell_state(row, col)
 
-            if state_cell not in (
-                HIDDEN,
-                FLAGGED,
-            ):
+            if state_cell not in (HIDDEN,FLAGGED):
                 self._log_error(
                     f"Célula já revelada ({row},{col})",
                     raw,
                 )
-                return self._fallback(
-                    game,
+                return self._fallback(game,
                     "célula já revelada",
                 )
 
+            # Resultado final
             result = {
                 "type": action,
                 "row": row,
@@ -211,11 +166,12 @@ Formato obrigatório:
             }
 
             self.last_reasoning = reasoning
-
+            
             self._log_success(result)
 
             return result
 
+        # Tratamento de Erros
         except json.JSONDecodeError as e:
             self._log_error(
                 f"JSON inválido: {e}",
@@ -228,23 +184,28 @@ Formato obrigatório:
             )
 
         except Exception as e:
-            self._log_error(
-                f"Erro API: {e}",
-                "",
-            )
+            try:
+                # Caso chegue no máximo de etapas, a gente pega o último resultado válido gerado pelo CodeAct
+                for step in agent1.memory.steps:
+                    # O output dos códigos executados fica salvo nas observações
+                    if hasattr(step, 'observations') and step.observations:
+                        match = re.search(r"(\{.*'row'.*'col'.*\})", str(step.observations), re.DOTALL)
+                        if match:
+                            data = ast.literal_eval(match.group(1))
+                            row, col = int(data["row"]), int(data["col"])
+                            action = data.get("action", "reveal").lower()
+                            
+                            result = {"type": action, "row": row, "col": col, "source": "llm_codeact_recuperado", "reasoning": "Resgatado da memória com sucesso!"}
+                            self._log_success(result)
+                            return result
+            except:
+                pass # Se até o roubo de memória falhar, desiste e vai pro fallback
 
-            return self._fallback(
-                game,
-                str(e),
-            )
+            self._log_error(f"Erro no CodeAgent: {e}", str(e))
+            return self._fallback(game, "Falha total do agente")
 
-    def _number_neighbors(
-        self,
-        game,
-        r,
-        c,
-    ):
-        from game import REVEALED
+    # Funções auxiliares
+    def _number_neighbors(self, game, r, c):
 
         for dr in range(-1, 2):
             for dc in range(-1, 2):
@@ -315,7 +276,6 @@ Formato obrigatório:
         game,
         reason,
     ):
-        from game import HIDDEN
 
         frontier = game.frontier_cells()
 
