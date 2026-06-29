@@ -203,25 +203,6 @@ class MinesweeperGame:
         return [(nr, nc) for nr, nc in self._neighbors(r, c)
                 if self.grid[nr][nc].state == REVEALED and self.grid[nr][nc].number > 0]
 
-    def to_ascii(self):
-        """Grid em ASCII para o LLM. (FEITA POR IA - Claude)"""
-        header = "   " + " ".join(f"{c:2}" for c in range(self.cols))
-        lines  = [header, "   " + "─" * (self.cols * 3)]
-        for r in range(self.rows):
-            row_chars = []
-            for c in range(self.cols):
-                cell = self.grid[r][c]
-                if cell.state == HIDDEN:
-                    row_chars.append(" .")
-                elif cell.state == FLAGGED:
-                    row_chars.append(" F")
-                elif cell.state == REVEALED:
-                    row_chars.append(f" {cell.number if cell.number > 0 else '□'}")
-                else:
-                    row_chars.append(" X")
-            lines.append(f"{r:2} |" + "".join(row_chars))
-        return "\n".join(lines)
-
     # Células ocultas adjacentes a pelo menos um número revelado.
     def frontier_cells(self):
         frontier = set()

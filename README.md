@@ -1,4 +1,3 @@
-
 # MinAgent - Campo Minado Autônomo com Árvore de Comportamento e LLM - Wellington Viana
 
 Este projeto implementa um agente autônomo capaz de jogar Campo Minado de forma inteligente. A tomada de decisão combina técnicas clássicas estruturadas através de uma Árvore de Comportamento (Behavior Tree) com a capacidade cognitiva de modelos de linguagem de grande porte (LLMs) como fallback para situações de alta incerteza.
@@ -19,7 +18,7 @@ RurAgent/
 |-- behavior_tree.py         (Estrutura e execucao da Arvore de Comportamento)
 |-- config.py                (Variaveis de configuracao do jogo e visual)
 |-- game.py                  (Engine e regras do Campo Minado)
-|-- llm_agent.py             (Agente e interface com a API da Hugging Face)
+|-- llm_agent.py             (Agente de IA baseado em smolagents/CodeAgent)
 |-- main.py                  (Ponto de entrada do sistema e loop principal)
 |-- README.md                (Este arquivo de documentacao)
 |-- renderer.py              (Interface grafica mesclando Pygame e Matplotlib)
@@ -31,7 +30,7 @@ O papel detalhado de cada arquivo de código:
 *   **config.py**: Arquivo central de configurações. Permite ajustar o tamanho do tabuleiro (padrão: 12x12), a quantidade de minas (padrão: 32), configurações do modelo de LLM (tokens máximos, ID do modelo), cores da interface gráfica e velocidade de execução automática.
 *   **game.py**: Implementa a engine e as regras do Campo Minado. Gerencia o estado das células (oculta, revelada, marcada com bandeira, explodida), a distribuição aleatória e segura de minas após a primeira jogada, o algoritmo de revelação em cascata (flood fill) e exportação do estado atual do jogo para o formato ASCII (usado pelo agente de LLM).
 *   **behavior_tree.py**: Define a estrutura da Árvore de Comportamento utilizando o framework `py_trees`. Ela orquestra a execução de estratégias determinísticas de resolução antes de recorrer à LLM.
-*   **llm_agent.py**: Gerencia a comunicação com a API de inferência da Hugging Face. Prepara o prompt descrevendo o tabuleiro atual em formato de caracteres (ASCII) e a lista de células de fronteira ativas, solicitando uma análise matemática em formato JSON para a tomada de decisão.
+*   **llm_agent.py**: Implementa o agente de IA utilizando o framework `smolagents` (`CodeAgent` + `LiteLLMModel`). Executa código Python internamente para calcular os riscos na fronteira do jogo e decidir a jogada mais segura via paradigma CodeAct.
 *   **renderer.py**: Constrói a janela gráfica principal integrando Pygame e Matplotlib. Contém a visualização interativa do tabuleiro, gráficos estatísticos e painéis de logs para acompanhar a tomada de decisão do agente passo a passo.
 
 ---
@@ -51,7 +50,7 @@ O comportamento do agente segue uma prioridade estrita de regras executada recur
         *   Caso a diferença de minas necessárias entre as duas células seja zero, as células extras exclusivas de B são seguras.
         *   Caso a diferença de minas necessárias seja igual ao número de células extras de B, essas células extras contêm minas obrigatoriamente.
 4.  **S4: Agente LLM**
-    *   **Regra**: Ativada somente quando nenhuma célula pode ser deduzida com 100% de certeza matemática pelas regras locais anteriores. A LLM recebe os dados das células da fronteira e calcula o risco relativo de cada candidata, executando a ação com o menor índice de risco estimado.
+    *   **Regra**: Ativada somente quando nenhuma célula pode ser deduzida com 100% de certeza matemática pelas regras locais anteriores. Utiliza o `CodeAgent` do **smolagents** para executar código Python e calcular o risco relativo de cada candidata da fronteira ativa, executando a ação mais segura através do `final_answer`.
 
 Se houver uma falha crítica na conexão ou na estruturação da resposta da LLM, o agente possui um mecanismo automático de fallback que executa uma jogada segura aleatória dentro da fronteira atual de modo a evitar o travamento da partida.
 
@@ -63,9 +62,10 @@ Para executar este projeto, você precisará ter instalado o Python 3.10 ou supe
 
 *   **pygame**: Renderização visual do tabuleiro de blocos.
 *   **matplotlib**: Estruturação dos painéis, logs, botões e dados estatísticos.
-*   **numpy**: Processamento eficiente dos arrays visuais gerados pelo Pygame para inserção no Matplotlib.
+*   **numpy**: Processamento eficiente dos arrays visuais gerados pelo Pygame para inserção no Matplotlib.      
 *   **py_trees**: Biblioteca para estruturação e execução da Árvore de Comportamento.
-*   **huggingface_hub**: Comunicação direta com os Inference Providers da Hugging Face para consulta da LLM.
+*   **smolagents**: Framework para desenvolvimento de agentes de IA capazes de escrever e executar código Python de forma autônoma.
+*   **litellm**: Biblioteca que unifica chamadas a diversos provedores de modelos de linguagem de forma consistente.
 *   **python-dotenv**: Carregamento de variáveis de ambiente a partir do arquivo `.env`.
 
 ---
@@ -93,9 +93,9 @@ source venv/bin/activate
 ```
 
 ### 3. Instalar as Dependências
-Com o ambiente virtual ativo, execute o comando abaixo para instalar todos os pacotes necessários:
+Com o ambiente virtual ativo, execute o comando abaixo para instalar todos os pacotes necessários via pip:
 ```bash
-pip install pygame matplotlib numpy py-trees huggingface_hub python-dotenv
+pip install -r requirements.txt
 ```
 
 ### 4. Configurar as Variáveis de Ambiente e Requisitos do Token Hugging Face
