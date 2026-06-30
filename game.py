@@ -143,11 +143,19 @@ class MinesweeperGame:
     def _check_win(self):
         total = self.rows * self.cols
         if self.cells_revealed == total - self.num_mines:
+            self._flag_all_mines()
             self.flags_placed = self.num_mines
             self.won = True
             self.game_over = True
             
 
+    # Marcar automaticamente todas as flags
+    def _flag_all_mines(self):
+        for r in range(self.rows):
+            for c in range(self.cols):
+                cell = self.grid[r][c]
+                if cell.is_mine and cell.state == HIDDEN:
+                    cell.state = FLAGGED
     # Highlights 
     def clear_highlights(self):
         for r in range(self.rows):
