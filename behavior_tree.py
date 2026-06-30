@@ -98,7 +98,7 @@ Regra: Nessa parte, a gente vai comparar células em pares e com base nisso vamo
 '''
 class Subconjuntos(py_trees.behaviour.Behaviour):
     def __init__(self, game):
-        super().__init__("S3: Subconjuntos")
+        super().__init__("Subconjuntos")
         self.game = game
         self.bb = py_trees.blackboard.Client(name=self.name)
         self.bb.register_key("action", access=py_trees.common.Access.WRITE)
