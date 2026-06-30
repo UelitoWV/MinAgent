@@ -7,7 +7,7 @@ load_dotenv()
 # LLM
 HF_TOKEN       = os.getenv("HF_TOKEN")
 LLM_MODEL      = os.getenv("LLM_MODEL", "meta-llama/Meta-Llama-3-70B-Instruct:novita")
-LLM_MAX_TOKENS = 512
+LLM_MAX_TOKENS = os.getenv("LLM_MAX_TOKENS", "1024")
 
 # Tabuleiro
 ROWS           = 12
